@@ -7,15 +7,6 @@ Indexing
 set/get \,
 */
 
-fn main() {
-    println!("Hello, world!");
-    let mut bitys_test: Bitys<u8> = Bitys::new();
-    bitys_test.set(1,true);
-    bitys_test.set(2,true);
-    bitys_test.set(3,true);
-    println!("{},{:?}",bitys_test.get(3),bitys_test);
-}
-
 use bit_field::BitField;
 
 pub trait UInts {const ELEMENT_BITS:usize;}
@@ -25,7 +16,7 @@ macro_rules! unints {($($type:ty),*) => {
 unints!(u8,u16,u32,u64);
 
 #[derive(Debug)]
-struct Bitys<ElementType: UInts> {pub bytes:Vec<ElementType>}
+pub struct Bitys<ElementType: UInts> {pub bytes:Vec<ElementType>}
 
 impl<ElementType: UInts + BitField + Default + Clone + Copy> Bitys<ElementType> {
     pub fn bit_idx(bitdex:usize) -> usize {bitdex%ElementType::ELEMENT_BITS}
