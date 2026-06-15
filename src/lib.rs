@@ -9,16 +9,20 @@ set/get \,
 
 use bit_field::BitField;
 
-pub trait UInts {const ELEMENT_BITS:usize;}
+pub trait UInts: BitField + Default + Clone + Copy {const ELEMENT_BITS:usize; const ELEMENT_INADDR_BITS: usize;const LEN_BITS:usize;}
 macro_rules! unints {($($type:ty),*) => {
-    $(impl UInts for $type {const ELEMENT_BITS:usize=std::mem::size_of::<$type>() * 8;})*}
+    $(impl UInts for $type { //[ADDR, LEN] -> [ADDR, BITADDR,LEN]
+        const ELEMENT_BITS:usize=std::mem::size_of::<$type>() * 8;
+        const ELEMENT_INADDR_BITS: usize = Self::ELEMENT_BITS.ilog2() as usize;  //Bits for addresing any bit in a element
+        const LEN_BITS:usize = Self::ELEMENT_BITS - Self::ELEMENT_INADDR_BITS; //max slice bits
+    })*}
 }
 unints!(u8,u16,u32,u64);
 
 #[derive(Debug)]
 pub struct Bitys<ElementType: UInts> {pub bytes:Vec<ElementType>}
 
-impl<ElementType: UInts + BitField + Default + Clone + Copy> Bitys<ElementType> {
+impl<ElementType: UInts> Bitys<ElementType> {
     pub fn bit_idx(bitdex:usize) -> usize {bitdex%ElementType::ELEMENT_BITS}
     pub fn elems_idx(bitdex:usize) -> usize {bitdex/ElementType::ELEMENT_BITS}
     pub fn get(&self, index:usize) -> bool {self.bytes[Self::elems_idx(index)].get_bit(Self::bit_idx(index))}
@@ -31,3 +35,8 @@ impl<ElementType: UInts + BitField + Default + Clone + Copy> Bitys<ElementType> 
     }
     pub fn new() -> Self{ Self{bytes:Vec::new()}  }
 } //Excluding genercis I have a full working bitvec in lines:25-39 just 14 lines of code!
+
+// struct BitProxy<'a,ElementType: UInts> {
+//     byte: &'a mut ElementType,
+//     bit: usize, // 0 to 7
+// }
