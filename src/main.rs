@@ -10,8 +10,10 @@ set/get \,
 fn main() {
     println!("Hello, world!");
     let mut bitys_test: Bitys<u8> = Bitys::new();
-    bitys_test.set(5,true);
-    println!("{}",bitys_test.get(5));
+    bitys_test.set(1,true);
+    bitys_test.set(2,true);
+    bitys_test.set(3,true);
+    println!("{},{:?}",bitys_test.get(3),bitys_test);
 }
 
 use bit_field::BitField;
@@ -22,9 +24,8 @@ macro_rules! unints {($($type:ty),*) => {
 }
 unints!(u8,u16,u32,u64);
 
-struct Bitys<ElementType: UInts> {
-    pub bytes:Vec<ElementType>,
-}
+#[derive(Debug)]
+struct Bitys<ElementType: UInts> {pub bytes:Vec<ElementType>}
 
 impl<ElementType: UInts + BitField + Default + Clone + Copy> Bitys<ElementType> {
     pub fn bit_idx(bitdex:usize) -> usize {bitdex%ElementType::ELEMENT_BITS}
@@ -38,4 +39,4 @@ impl<ElementType: UInts + BitField + Default + Clone + Copy> Bitys<ElementType> 
         self.bytes[elems_idx].set_bit(Self::bit_idx(bitdex),val);
     }
     pub fn new() -> Self{ Self{bytes:Vec::new()}  }
-} //Excluding genercis I have a full working bitvec in lines:17-35 just 18 lines of code!
+} //Excluding genercis I have a full working bitvec in lines:25-39 just 14 lines of code!
