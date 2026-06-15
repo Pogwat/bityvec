@@ -6,8 +6,7 @@ pub trait BitOps:BitTypes {
     fn set_bit(&mut self, bitdex:usize);
 }
 use std::ops::{Shl,Sub,BitXor,Not};
-pub trait BitTypes: Sized+Shl<usize, Output = Self> + Sub<Self, Output = Self> + BitXor<Self, Output = Self> +  Not{
-}
+pub trait BitTypes: Sized+Shl<usize, Output = Self> + Sub<Self, Output = Self> + BitXor<Self, Output = Self> +  Not{}
 
 macro_rules! bittypes {
     ($($type:ty),*) => {

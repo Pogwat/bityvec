@@ -6,7 +6,7 @@ popcnt
 Indexing
 set/get \,
 */
-mod bitops;
+pub mod bitops;
 use bitops::BitOps;
 use bit_field::BitField;
 
