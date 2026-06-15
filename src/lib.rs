@@ -6,7 +6,8 @@ popcnt
 Indexing
 set/get \,
 */
-
+mod bitops;
+use bitops::BitOps;
 use bit_field::BitField;
 
 pub trait UInts: BitField + Default + Clone + Copy {const ELEMENT_BITS:usize; const ELEMENT_INADDR_BITS: usize;const LEN_BITS:usize;}
