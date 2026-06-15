@@ -14,8 +14,8 @@ macro_rules! unints {($($type:ty),*) => {
     $(impl UInts for $type { //[ADDR, LEN] -> [ADDR, BITADDR,LEN]
         const ELEMENT_BITS:usize=std::mem::size_of::<$type>() * 8;
         const ELEMENT_INADDR_BITS: usize = Self::ELEMENT_BITS.ilog2() as usize;  //Bits for addresing any bit in a element
-        const LEN_BITS:usize = Self::ELEMENT_BITS - Self::ELEMENT_INADDR_BITS; //max slice bits
-    })*}
+        const LEN_BITS:usize = (std::mem::size_of::<usize>()*8)- Self::ELEMENT_INADDR_BITS; //max slice bits
+    })*} //[StartElem(64), StartBit(6), Len(58)]
 }
 unints!(u8,u16,u32,u64);
 
