@@ -23,7 +23,7 @@ fn bitops_get_set() {
     assert_eq!(num.get_bit(2), false);
     assert_eq!(num.get_bit(3), true);
 
-    num.set_bit(7);
+    num.set_bit(7, true);
     println!("{}",num.get_bit(7));
     assert_eq!(num.get_bit(7), true);
     assert_eq!(num.get_bit(3), true);
