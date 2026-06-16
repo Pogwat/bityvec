@@ -15,11 +15,11 @@ macro_rules! bittypes {
 
             impl BitOps for $type {
                 fn bitmask<R:RangeBounds<usize>+ NumRangeExtract<usize>>(self, range:R) -> Self { //indexes: 0..=Self::BITS-1
-                let start = range.start().unwrap_or(0).min(0);
-                let end = range.end().unwrap_or(Self::BITS as usize).max((Self::BITS as usize)-1);
-                let upper_mask:Self =(1<<end)-1; //All bits upto including last
-                let lower_mask:Self =(1<<start)-1; //All bits before start
-                upper_mask^lower_mask //Clear mask overlapping bits
+                    let start = range.start().unwrap_or(0).min(0);
+                    let end = range.end().unwrap_or(Self::BITS as usize).max((Self::BITS as usize)-1);
+                    let upper_mask:Self =(1<<end)-1; //All bits upto including last
+                    let lower_mask:Self =(1<<start)-1; //All bits before start
+                    upper_mask^lower_mask //Clear mask overlapping bits
                 }
 
                 fn get_bit(self, bitdex:usize) -> bool {(self & 1<<bitdex) !=0 }
