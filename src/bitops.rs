@@ -1,11 +1,12 @@
 pub trait BitOps:BitTypes {
-    fn bitmask<R:RangeBounds<usize>+ NumRangeExtract<usize>>(range: &R) -> Self;
+    fn bitmask<R:RangeBounds<usize>+ NumRangeExtract<usize>>(range: &R, val:bool) -> Self;
     fn get_bit(&self, bitdex:usize) -> bool;
     fn set_bit(&mut self, bitdex:usize, val:bool);
     fn get_bits<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&self, range:&R) -> Self;
     fn ctz<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&self, range:&R) -> usize;
     fn popcnt<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&self, range:&R) -> usize;
     fn set_bits<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&mut self, range:&R, val:bool);
+    fn set_all_bit(val:bool) -> Self;
 }
 use std::ops::{Shl,Sub,BitXor,Not};
 pub trait BitTypes: Sized+Shl<usize, Output = Self> + Sub<Self, Output = Self> + BitXor<Self, Output = Self> +  Not{}
@@ -16,22 +17,32 @@ macro_rules! bittypes {
             impl BitTypes for $type {}
 
             impl BitOps for $type {
-                fn bitmask<R:RangeBounds<usize>+ NumRangeExtract<usize>>(range:&R) -> Self { //indexes: 0..=Self::BITS-1
+                fn bitmask<R:RangeBounds<usize>+ NumRangeExtract<usize>>(range:&R, val:bool) -> Self { //indexes: 0..=Self::BITS-1
                     let start = range.bits_start();
                     let end = range.bits_end();
-                    (Self::MAX >> (Self::BITS as usize - 1 - (end - start))) << start
+                    (Self::set_all_bit(val) >> (Self::BITS as usize - 1 - (end - start))) << start //val determines bits of mask 000s vs 111s
                 }
 
                 fn get_bit(&self, bitdex:usize) -> bool {(self & 1<<bitdex) !=0 }
-                fn set_bit(&mut self, bitdex:usize, val:bool) {*self |= (val as $type)<<bitdex}
-                fn ctz<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&self, range:&R) -> usize {
-                    ((!Self::bitmask(range)) | self).count_zeros() as usize //  111111BitsWeWant1111111 , others are 1
+                fn set_bit(&mut self, bitdex:usize, val:bool) {
+                    let mask = (1 as $type)<<bitdex;
+                    *self &= !mask;
+                    *self |= (val as $type) << bitdex;
                 }
-                fn get_bits<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&self, range:&R) -> Self {Self::bitmask(range) & self}
+
+                fn ctz<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&self, range:&R) -> usize {
+                    ((!Self::bitmask(range,true)) | self).count_zeros() as usize //  111111BitsWeWant1111111 , others are 1
+                }
+                fn get_bits<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&self, range:&R) -> Self {Self::bitmask(range,true) & self}
                 fn popcnt<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&self, range:&R) -> usize {
                     self.get_bits(range).count_ones() as usize
                 }
-                fn set_bits<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&mut self, range:&R, val:bool) {*self |= Self::bitmask(range)}
+                fn set_bits<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&mut self, range:&R, val:bool) {
+                    let diff = (*self ^ Self::set_all_bit(val)) & Self::bitmask(range,true); //XOR only outputs 1 whenn both inputs are diffrent
+                    *self ^= diff; //Since the bits are diffrent this will flip these diffrent bits
+                }
+                fn set_all_bit(val:bool) -> Self {(0 as Self).wrapping_sub(val as Self) /*0000.. if 0  ,  1111.. if 1*/}
+
 
             }
         )*

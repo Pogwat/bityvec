@@ -33,7 +33,7 @@ fn bitops_get_set() {
 
 #[test]
 fn bitops_bitmask() {
-    let num:u8 =BitOps::bitmask(&(0..8));
+    let num:u8 =BitOps::bitmask(&(0..8),true);
     println!("bitmask:{:?}",num);
     assert_eq!(num as usize, 2_usize.pow(8)-1)
 }
