@@ -1,12 +1,11 @@
 pub trait BitOps:BitTypes {
-    // get_bit(&self, bit:usize) -> bool;
-    // set_bit(&mut self, bit:usize, val:bool);
     fn bitmask<R:RangeBounds<usize>+ NumRangeExtract<usize>>(range: &R) -> Self;
     fn get_bit(&self, bitdex:usize) -> bool;
     fn set_bit(&mut self, bitdex:usize, val:bool);
     fn get_bits<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&self, range:&R) -> Self;
     fn ctz<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&self, range:&R) -> usize;
     fn popcnt<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&self, range:&R) -> usize;
+    fn set_bits<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&mut self, range:&R, val:bool);
 }
 use std::ops::{Shl,Sub,BitXor,Not};
 pub trait BitTypes: Sized+Shl<usize, Output = Self> + Sub<Self, Output = Self> + BitXor<Self, Output = Self> +  Not{}
@@ -18,8 +17,8 @@ macro_rules! bittypes {
 
             impl BitOps for $type {
                 fn bitmask<R:RangeBounds<usize>+ NumRangeExtract<usize>>(range:&R) -> Self { //indexes: 0..=Self::BITS-1
-                    let start = range.start().unwrap_or(0).max(0);
-                    let end = range.end().unwrap_or(Self::BITS as usize).min((Self::BITS as usize)-1);
+                    let start = range.bits_start();
+                    let end = range.bits_end();
                     (Self::MAX >> (Self::BITS as usize - 1 - (end - start))) << start
                 }
 
@@ -32,6 +31,7 @@ macro_rules! bittypes {
                 fn popcnt<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&self, range:&R) -> usize {
                     self.get_bits(range).count_ones() as usize
                 }
+                fn set_bits<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&mut self, range:&R, val:bool) {*self |= Self::bitmask(range)}
 
             }
         )*
@@ -45,6 +45,11 @@ use std::ops::RangeBounds;
 pub trait NumRangeExtract<T>: RangeBounds<T>  {
     fn end(&self) -> Option<T>;
     fn start(&self) -> Option<T>;
+}
+
+pub trait BitZRange<T>: NumRangeExtract<T> {
+    fn bits_end(&self) -> usize;
+    fn bits_start(&self) -> usize;
 }
 
 macro_rules! num_rangy {
@@ -66,8 +71,15 @@ macro_rules! num_rangy {
                     }
                 }
             }
+
+            impl <R:NumRangeExtract<$type>> BitZRange<$type> for R {
+                fn bits_start(&self) -> usize {self.start().unwrap_or(0).max(0) as usize}
+                fn bits_end(&self) -> usize {self.end().unwrap_or(<$type>::BITS as $type).min((<$type>::BITS as $type)-1) as usize}
+            }
+
         )*
     }
 }
+
 
 num_rangy!(u8,u16,u32,u64,usize);

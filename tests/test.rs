@@ -50,3 +50,12 @@ fn bitops_popcnt_ctz() {
     assert_eq!(num.count_ones() as usize,num.popcnt(&(0..=7)));
 }
 
+#[test]
+fn bitops_get_set_bits(){
+    let mut num: u8 = 0;
+    num.set_bits(&(0..=2),true);
+    println!("num: {}",num);
+    assert_eq!(num, 2_u8.pow(3)-1);
+    assert_eq!(num, num.get_bits(&(0..=2)));
+}
+
