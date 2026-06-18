@@ -25,15 +25,15 @@ fn bitops_get_set() {
 
     num.set_bit(7, true);
     println!("{}",num.get_bit(7));
+    assert_eq!(num, (8+2_u8.pow(7))); 
     assert_eq!(num.get_bit(7), true);
     assert_eq!(num.get_bit(3), true);
     println!("{}",num);
-    assert_eq!(num, (8+2_u8.pow(7))) 
 }
 
 #[test]
 fn bitops_bitmask() {
-    let num:u8 =BitOps::bitmask(&(0..8),true);
+    let num:u8 =BitOps::bitmask(&(0..8));
     println!("bitmask:{:?}",num);
     assert_eq!(num as usize, 2_usize.pow(8)-1)
 }
@@ -58,4 +58,23 @@ fn bitops_get_set_bits(){
     assert_eq!(num, 2_u8.pow(3)-1);
     assert_eq!(num, num.get_bits(&(0..=2)));
 }
+
+#[test]
+fn bitops_first_last_set_bit() {
+    let bit_set:u8 = 5;
+    let mut num:u8 = 2_u8.pow(5); // 001
+    assert_eq!(num.first_set_bit(), 5);
+    assert_eq!(num.last_set_bit(), 5);
+    let last_bit = 7;
+    num += 2_u8.pow(last_bit);
+    assert_eq!(num.last_set_bit(), 7);
+
+}
+#[test]
+fn bitops_set_these_bits() {
+    let mut num:u8 = 255;
+    num.set_these_bits(0b0111, &(0..4));
+    println!("{:08b}", num); 
+}
+
 
