@@ -75,6 +75,7 @@ fn bitops_set_these_bits() {
     let mut num:u8 = 255;
     num.set_these_bits(0b0111, &(0..4));
     println!("{:08b}", num); 
+    assert_eq!(num, 255-2_u8.pow(3))
 }
 
 
