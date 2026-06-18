@@ -43,7 +43,7 @@ macro_rules! bittypes {
                 fn set_these_bits<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&mut self, bits:Self, range:&R) {
                     //XOR is commutative and self-inverse
                     //A ^B ^B  = A ^(B^B), B^B = 0, So A^B^B = A , dobule xoring undos xor
-                    //Here we Self^Bits and truncate it, then we un xor it to reverse the xors, giving us self and bits 
+                    //Here we Self^Bits and truncate it, then we xor it to reverse the xors, giving us self and truncated bits 
                     let diff = (*self ^ bits) & Self::bitmask(range); //Truncated diff
                     *self ^= diff; //XORing the diff undo the xor leaving just a truncated bits and self
                 }
