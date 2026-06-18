@@ -6,11 +6,9 @@ popcnt
 Indexing
 set/get \,
 */
-pub mod bitops;
-use bitops::BitOps;
-use bit_field::BitField;
+use bit_operations::BitOps;
 
-pub trait UInts: BitField + Default + Clone + Copy {const ELEMENT_BITS:usize; const ELEMENT_INADDR_BITS: usize;const LEN_BITS:usize;}
+pub trait UInts: BitOps + Default + Clone + Copy {const ELEMENT_BITS:usize; const ELEMENT_INADDR_BITS: usize;const LEN_BITS:usize;}
 macro_rules! unints {($($type:ty),*) => {
     $(impl UInts for $type { //[ADDR, LEN] -> [ADDR, BITADDR,LEN]
         const ELEMENT_BITS:usize=std::mem::size_of::<$type>() * 8;

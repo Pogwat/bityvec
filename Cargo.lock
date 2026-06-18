@@ -3,14 +3,14 @@
 version = 4
 
 [[package]]
-name = "bit_field"
-version = "0.10.3"
+name = "bit_operations"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e4b40c7323adcfc0a41c4b88143ed58346ff65a288fc144329c5c45e05d70c6"
+checksum = "4980bfe2399c23556c6a5b5e6374b7fb56b4614294b440e864d8fe0649706ba9"
 
 [[package]]
 name = "bitys"
 version = "0.1.0"
 dependencies = [
- "bit_field",
+ "bit_operations",
 ]

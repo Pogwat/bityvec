@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bit_field = "0.10.3"
+bit_operations = "0.1.0"
