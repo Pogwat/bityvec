@@ -10,7 +10,6 @@ pub trait BitOps:BitTypes {
     fn set_these_bits<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&mut self, bits:Self, range:&R);
     fn first_set_bit(&self) -> usize;
     fn last_set_bit(&self) -> usize;
-    
 }
 use std::ops::{Shl,Sub,BitXor,Not};
 pub trait BitTypes: Sized+Shl<usize, Output = Self> + Sub<Self, Output = Self> + BitXor<Self, Output = Self> +  Not{}
@@ -42,14 +41,9 @@ macro_rules! bittypes {
                     self.get_bits(range).count_ones() as usize
                 }
                 fn set_these_bits<R:RangeBounds<usize>+ NumRangeExtract<usize>>(&mut self, bits:Self, range:&R) {
-                    //000100000 //self
-                    //101011101 //bits
-                    //101111101 //Xor mask //Only same bits are marked 0, XOR marks same bits with a 0
-                    //If they are same they turn to 0
-                    //Xor Mask ^ self
-                    //000100000 //self
-                    //101111101 //Xor mask
-                    //101011101 //XOR mask ^ Self -> bits  
+                    //XOR is commutative and self-inverse
+                    //A ^B ^B  = A ^(B^B), B^B = 0, So A^B^B = A , dobule xoring undos xor
+                    //Here we Self^Bits and truncate it, then we un xor it to reverse the xors, giving us self and bits 
                     let diff = (*self ^ bits) & Self::bitmask(range); //Truncated diff
                     *self ^= diff; //XORing the diff undo the xor leaving just a truncated bits and self
                 }
@@ -59,7 +53,6 @@ macro_rules! bittypes {
                 }
                 fn first_set_bit(&self) -> usize {self.trailing_zeros() as usize} //Can go OOB
                 fn last_set_bit(&self) -> usize {(Self::BITS -1 - self.leading_zeros()) as usize} //Can go OOB
-
 
             }
         )*
