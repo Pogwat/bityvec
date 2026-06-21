@@ -8,8 +8,7 @@ IndexMut
 set/get \,
 */
 use bit_operations::BitOps;
-mod indexing;
-use indexing::*;
+use bit_operations::MutBitProxy;
 
 pub trait UInts: BitOps + Default + Clone + Copy {
     const ELEMENT_BITS:usize; 
@@ -42,6 +41,7 @@ impl<ElementType: UInts> Bitys<ElementType> {
         self.bytes[type_idx].set_bit(Self::bit_idx(bitdex),val);
     }
     pub fn new() -> Self{ Self{bytes:Vec::new()}  }
+    pub fn get_mut(&mut self, bitdex:usize) -> MutBitProxy<'_,ElementType> {self.bytes[Self::type_idx(bitdex)].mut_bit(Self::bit_idx(bitdex))}
 } //Excluding genercis I have a full working bitvec in lines:25-39 just 14 lines of code!
 
 use std::ops::Index;
