@@ -8,6 +8,8 @@ IndexMut
 set/get \,
 */
 use bit_operations::BitOps;
+mod indexing;
+use indexing::*;
 
 pub trait UInts: BitOps + Default + Clone + Copy {
     const ELEMENT_BITS:usize; 
