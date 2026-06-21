@@ -3,7 +3,8 @@ SIMD lookup
 Slices
 ctz
 popcnt
-Indexing
+Index \,
+IndexMut
 set/get \,
 */
 use bit_operations::BitOps;
