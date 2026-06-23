@@ -1,53 +1,58 @@
 use std::mem::transmute;
+use std::marker::PhantomData;
 use bit_operations::BitOps;
 use crate::UInts;
-/* END_BIT,START_BIT,END_ELEM,ADDR */
-pub struct BitSlice<A> {
-    addr: A, //64 bits
-    end_bit: usize, // 3 bits
+
+pub struct Mutable;
+pub struct Immutable;
+/* START, START BIT, END, END_BIT */
+pub struct BitSlice<Mutability> {
+    start_element:usize, //61 bits
     start_bit:usize, //3 bits
-    end_element:usize //58 bits
+    end_element:usize, //61 bits
+    end_bit: usize, // 3 bits
+    _mutability: PhantomData<Mutability>, // 0 bits
 }
 
-impl<A> BitSlice<A> {
-    fn wrap_meta(&self) -> usize {
-        let mut end_bit_start_bit_end_element = self.end_element;
-        end_bit_start_bit_end_element.set_these_bits(self.start_bit << 58, &(58..61));
-        end_bit_start_bit_end_element.set_these_bits(self.end_bit << 61, &(61..=63));
-        end_bit_start_bit_end_element
+impl <Mutability> BitSlice<Mutability> {
+    fn wrap(&self) -> (usize,usize) {
+        let mut start = self.start_element;
+        start.set_these_bits(self.start_bit << 61, &(61..=63));
+        let mut end = self.end_element;
+        end.set_these_bits(self.end_bit << 61, &(61..=63));
+        (start,end)
     }
 
-    pub fn to_pointer<'a, ElementType: UInts>(&self) -> &'a [ElementType] 
-    where A: AsRef<ElementType> /*Cant redeclare Generics*/ {
-        let addr = self.addr.as_ref() as *const ElementType as usize;
-        unsafe { std::mem::transmute((addr, self.wrap_meta())) }
-    }
-
-    pub fn to_mut_pointer<'a, ElementType: UInts>(&mut self) -> &'a mut [ElementType] 
-    where A: AsMut<ElementType>, /*Cant redeclare Generics*/ {
-        let addr = self.addr.as_mut() as *mut ElementType as usize;
-        unsafe { std::mem::transmute((addr, self.wrap_meta())) }
-    }
+    pub fn to_pointer<'a, ElementType: UInts>(&self) -> &'a [ElementType] {unsafe { std::mem::transmute(self.wrap()) }}
+    pub fn to_mut_pointer<'a, ElementType: UInts>(&mut self) -> &'a mut [ElementType] {unsafe { std::mem::transmute(self.wrap()) }}
+        
 }
 
-pub trait BitSliceOps<ElementType> {
-    fn to_bitslice(&self) -> BitSlice<&ElementType>;
-    fn to_bitslice_mut(&mut self) -> BitSlice<&mut ElementType>;
-    fn unwrap_meta(meta:usize) -> (usize,usize,usize); //(end_bit,start_bit,end_element)
+pub trait MutabilityFlag {type MutFlag;}
+
+pub trait BitSliceOps<Mutability>: MutabilityFlag {
+    fn to_bitslice(&self) -> BitSlice<Mutability>;
 }
 
-impl<ElementType: UInts> BitSliceOps<ElementType> for [ElementType] {
-    fn unwrap_meta(meta:usize) -> (usize,usize,usize) {( meta.get_bits(&(61..=63)), meta.get_bits(&(58..61)),meta.get_bits(&(0..58)) ) }
+macro_rules! slice_mutability {
+    (($($generics:tt)*), $target_type:ty, $mutability:ty) => {
+        impl<$($generics)*> MutabilityFlag for $target_type {type MutFlag = $mutability;}
 
-    fn to_bitslice(&self) -> BitSlice<&ElementType> {
-        let (addr,end_element_start_bit_end_bit): (usize, usize) = unsafe { std::mem::transmute(self) };
-        let (end_bit,start_bit,end_element) = Self::unwrap_meta(end_element_start_bit_end_bit);
-        BitSlice {addr: unsafe { &*(addr as *const ElementType) },end_element,start_bit,end_bit}
-    }
-
-    fn to_bitslice_mut(&mut self) -> BitSlice<&mut ElementType> {
-        let (addr,end_element_start_bit_end_bit): (usize, usize) = unsafe { std::mem::transmute(self) };
-        let (end_bit,start_bit,end_element) = Self::unwrap_meta(end_element_start_bit_end_bit);
-        BitSlice {addr: unsafe { &mut *(addr as *mut ElementType) },end_element,start_bit,end_bit}
-    }
+        impl<$($generics)*> BitSliceOps<$mutability> for $target_type {
+            fn to_bitslice(&self) -> BitSlice<$mutability> {
+                let (start, end): (usize, usize) = unsafe {  *(self as *const Self as *const (usize, usize)) }; //Pointer to (self as 2 usize pointers) then deref
+                BitSlice {
+                    start_element: start.get_bits(&(0..61)), 
+                    start_bit: start.get_bits(&(61..=63)) >> 61, 
+                    end_element: end.get_bits(&(0..61)), 
+                    end_bit: end.get_bits(&(61..=63)) >> 61, 
+                    _mutability: PhantomData, 
+                }
+            }
+        }
+    };
 }
+
+slice_mutability!((ElementType: UInts), [ElementType], Immutable);
+slice_mutability!((ElementType: UInts), &mut [ElementType], Mutable);
+slice_mutability!((ElementType: UInts), & [ElementType], Immutable);
