@@ -9,6 +9,8 @@ set/get \,
 */
 use bit_operations::BitOps;
 use bit_operations::MutBitProxy;
+mod slicing;
+use slicing::*;
 
 pub trait UInts: BitOps + Default + Clone + Copy {
     const ELEMENT_BITS:usize; 
