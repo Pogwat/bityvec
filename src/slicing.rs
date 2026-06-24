@@ -25,7 +25,7 @@ impl <Mutability> BitSlice<Mutability> {
 
     pub fn to_pointer<'a, ElementType: UInts>(&self) -> &'a [ElementType] {unsafe { std::mem::transmute(self.wrap()) }}
     pub fn to_mut_pointer<'a, ElementType: UInts>(&mut self) -> &'a mut [ElementType] {unsafe { std::mem::transmute(self.wrap()) }}
-        
+ 
 }
 
 pub trait MutabilityFlag {type MutFlag;}

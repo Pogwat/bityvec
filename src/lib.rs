@@ -11,17 +11,21 @@ use bit_operations::BitOps;
 use bit_operations::MutBitProxy;
 mod slicing;
 use slicing::*;
+mod iter;
+use iter::*;
 
 pub trait UInts: BitOps + Default + Clone + Copy {
     const ELEMENT_BITS:usize; 
     const ELEMENT_INADDR_BITS: usize;
     const LEN_BITS:usize;
+    const BITDEX_MAX:usize;
 }
 macro_rules! unints {($($type:ty),*) => {
     $(impl UInts for $type { //[ADDR, LEN] -> [ADDR, BITADDR,LEN]
         const ELEMENT_BITS:usize=Self::BITS as usize;
         const ELEMENT_INADDR_BITS: usize = Self::ELEMENT_BITS.ilog2() as usize;  //Bits for addresing any bit in a element
         const LEN_BITS:usize = (std::mem::size_of::<usize>()*8)- Self::ELEMENT_INADDR_BITS; //max slice bits
+        const BITDEX_MAX:usize = Self::ELEMENT_BITS.ilog2() as usize;
     })*} //[StartElem(64), StartBit(6), Len(58)]
 }
 unints!(u8,u16,u32,u64);
@@ -44,6 +48,8 @@ impl<ElementType: UInts> Bitys<ElementType> {
     }
     pub fn new() -> Self{ Self{bytes:Vec::new()}  }
     pub fn get_mut(&mut self, bitdex:usize) -> MutBitProxy<'_,ElementType> {self.bytes[Self::type_idx(bitdex)].mut_bit(Self::bit_idx(bitdex))}
+    pub fn iter(&self) -> Biter<ElementType> {Biter {end_ptr:(&self.bytes[self.bytes.len()-1] as *const ElementType), end_bit:7,ptr: &self.bytes[0] as *const ElementType,bit_position: 0}
+}
 } //Excluding genercis I have a full working bitvec in lines:25-39 just 14 lines of code!
 
 use std::ops::Index;
