@@ -3,34 +3,63 @@ use bitys::Bitys;
 fn get_set() {
     println!("Hello, world!");
     let mut bitys_test: Bitys<u8> = Bitys::new();
-    bitys_test.set(1,true);
-    bitys_test.set(2,true);
-    bitys_test.set(3,true);
+    bitys_test.push(true);
+    bitys_test.push(true);
+    bitys_test.push(true);
+    assert_eq!(bitys_test.get(0),true);
     assert_eq!(bitys_test.get(1),true);
     assert_eq!(bitys_test.get(2),true);
-    assert_eq!(bitys_test.get(3),true);
-    assert_eq!(bitys_test.get(4),false);
-    println!("{},{:?}",bitys_test.get(3),bitys_test);
+    bitys_test.set(1,false);
+    assert_eq!(bitys_test.get(1),false);
+    //println!("{},{:?}",bitys_test.get(3),bitys_test);
 }
 
 #[test]
 fn iter() {
     let mut bitys_test: Bitys<u8> = Bitys::new();
-    bitys_test.set(10,true);
-    bitys_test.set(0,true);
-    bitys_test.set(15,true);
-    println!("last: {}",bitys_test.get(15));
+    bitys_test.push(true);
+    bitys_test.push(true);
+    bitys_test.push(false);
+    println!("last: {}",bitys_test.get(2));
     let mut len=0;
-    assert_eq!(bitys_test.get(10),true);
+    assert_eq!(bitys_test.get(0),true);
         bitys_test.iter().enumerate().for_each(|(idx,bit)| {
-        if idx == 10 {assert_eq!(bit,true)}
-        if idx == 15 {assert_eq!(bit,true)}
-        if idx == 0 {assert_eq!(bit,true)}
-        if idx == 5 {assert_eq!(bit,false)}
+        if idx == 1 {assert_eq!(bit,true)}
+        if idx == 0 {assert_eq!(bit,true); println!("Zeroth element: {} ",bit)}
+        if idx == 2 {assert_eq!(bit,false)}
+        if idx == 3 {panic!("Indexing: {} when len is {}",len,bitys_test.len)}
+        if idx == 4 {panic!("Indexing: {} when len is {}",len,bitys_test.len)}
         len+=1;
         println!("{}",bit)
     });
-    assert_eq!(len, bitys_test.bytes.len()*(u8::BITS as usize))
+    assert_eq!(len, 3);
+    assert_eq!(bitys_test.len, 3);
 } 
+
+#[test]
+fn iter_mut() {
+    let mut bitys_test: Bitys<u8> = Bitys::new();
+    bitys_test.push(true);
+    bitys_test.push(true);
+    bitys_test.push(false);
+    println!("last: {}",bitys_test.get(2));
+    let mut len=0;
+    assert_eq!(bitys_test.get(0),true);
+        bitys_test.iter_mut().enumerate().for_each(|(idx,mut bit)| {
+        println!("{}th element: {:?}",idx,*bit);
+        if idx == 0 {assert_eq!(*bit,true)}
+        if idx == 1 {assert_eq!(*bit,true)}
+        if idx == 2 {assert_eq!(*bit,false)}
+        {*bit = false;}
+        len+=1;
+    });
+    assert_eq!(bitys_test.get(0),false);
+    assert_eq!(bitys_test.get(1),false);
+    assert_eq!(bitys_test.get(2),false);
+    assert_eq!(len, 3);
+    assert_eq!(bitys_test.len, 3);
+} 
+
+
 
 

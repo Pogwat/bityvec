@@ -13,8 +13,9 @@ mod slicing;
 use slicing::*;
 mod iter;
 use iter::*;
+use std::marker::PhantomData;
 
-pub trait UInts: BitOps + Default + Clone + Copy {
+pub trait UInts: BitOps + Default + Copy {
     const ELEMENT_BITS:usize; 
     const ELEMENT_INADDR_BITS: usize;
     const LEN_BITS:usize;
@@ -31,25 +32,62 @@ macro_rules! unints {($($type:ty),*) => {
 unints!(u8,u16,u32,u64);
 
 #[derive(Debug)]
-pub struct Bitys<ElementType: UInts> {pub bytes:Vec<ElementType>}
+pub struct Bitys<ElementType: UInts> {
+    pub bytes:Vec<ElementType>,
+    pub len:usize //num of bits set
+}
 
 impl<ElementType: UInts> Bitys<ElementType> {
     const TRUE:bool = true; //Index trait must return refrence to self
     const FALSE:bool = false; //Index trait must return refrence to self
+    pub fn new() -> Self{ Self{bytes:Vec::new(), len:0}  }
     pub fn bit_idx(bitdex:usize) -> usize {bitdex%ElementType::ELEMENT_BITS}
     pub fn type_idx(bitdex:usize) -> usize {bitdex/ElementType::ELEMENT_BITS}
-    pub fn get(&self, index:usize) -> bool {self.bytes[Self::type_idx(index)].get_bit(Self::bit_idx(index))}
-    pub fn add_empty(&mut self) {self.bytes.push(ElementType::default())}
-    pub fn add_emptys(&mut self, empty_elems:usize) {self.bytes.resize(self.bytes.len()+empty_elems,ElementType::default())}
-    pub fn set(&mut self, bitdex:usize, val:bool) {
-        let type_idx = Self::type_idx(bitdex);
-        if type_idx+1>self.bytes.len() {self.add_emptys(type_idx+1-self.bytes.len())} //index+1>self.len() == index>self.len()-1, algebra add 1 to both sides, thsi repvents underflow if self.len()==0, as 0-1 = -1 usize cant be negative
-        self.bytes[type_idx].set_bit(Self::bit_idx(bitdex),val);
+    pub fn bit_bounds(&self,bitdex:usize) {if bitdex>=self.len {panic!("Index: {} is out of bounds as it is greater than len: {}", bitdex,self.len)}}
+
+    pub unsafe fn uncheked_get(&self, index:usize) -> bool {self.bytes[Self::type_idx(index)].get_bit(Self::bit_idx(index))}
+    pub fn get(&self, index:usize) -> bool {
+        self.bit_bounds(index);
+        unsafe {self.uncheked_get(index)}
     }
-    pub fn new() -> Self{ Self{bytes:Vec::new()}  }
-    pub fn get_mut(&mut self, bitdex:usize) -> MutBitProxy<'_,ElementType> {self.bytes[Self::type_idx(bitdex)].mut_bit(Self::bit_idx(bitdex))}
-    pub fn iter(&self) -> Biter<ElementType> {Biter {end_ptr:(&self.bytes[self.bytes.len()-1] as *const ElementType), end_bit:7,ptr: &self.bytes[0] as *const ElementType,bit_position: 0}
-}
+    
+    pub unsafe fn uncheked_set(&mut self, bitdex:usize, val:bool) {self.bytes[Self::type_idx(bitdex)].set_bit(Self::bit_idx(bitdex),val);}
+    pub fn set(&mut self, bitdex:usize, val:bool) { 
+        self.bit_bounds(bitdex);
+        unsafe { self.uncheked_set(bitdex,val) };
+    }
+    
+    pub fn push(&mut self, val:bool) {
+        let type_idx = Self::type_idx(self.len);
+        if type_idx>=self.bytes.len() {self.bytes.push(ElementType::default())};
+        self.bytes[type_idx].set_bit(Self::bit_idx(self.len), val);
+        self.len+=1;
+    }
+    
+    pub unsafe fn uncheked_get_mut(&mut self, bitdex:usize) -> MutBitProxy<'_,ElementType> {self.bytes[Self::type_idx(bitdex)].mut_bit(Self::bit_idx(bitdex))}
+    pub fn get_mut(&mut self, bitdex:usize) -> MutBitProxy<'_,ElementType> {
+        self.bit_bounds(bitdex);
+        unsafe {self.uncheked_get_mut(bitdex)}
+    }
+
+    pub fn iter(&self) -> Biter<ElementType> {
+        Biter {
+            end_ptr:(&self.bytes[self.bytes.len()-1] as *const ElementType), 
+            end_bit:Self::bit_idx(self.len)-1,
+            ptr: &self.bytes[0] as *const ElementType,
+            bit_position:0
+        }
+    }
+
+    pub fn iter_mut(&mut self) -> BiterMut<'_,ElementType> {
+        BiterMut {
+            ptr: &mut self.bytes[0] as *mut ElementType,
+            bit_position:0,
+            end_ptr: &self.bytes[self.bytes.len()-1] as *const ElementType,
+            end_bit:Self::bit_idx(self.len)-1,
+            _marker: PhantomData
+        }
+    }
 } //Excluding genercis I have a full working bitvec in lines:25-39 just 14 lines of code!
 
 use std::ops::Index;
