@@ -60,6 +60,15 @@ fn iter_mut() {
     assert_eq!(bitys_test.len, 3);
 } 
 
-
-
-
+#[test]
+fn slicings() { 
+    let mut bitys: Bitys<u8> = Bitys::new();
+    bitys.push(true);
+    bitys.push(true);
+    bitys.push(false);
+    let zf = bitys.slice(&(0..=2));
+    zf.iter().enumerate().for_each(|(bitdex,bit)| println!("{}:{}",bitdex,bit));
+    assert_eq!(zf[0],true);  
+    assert_eq!(zf[1],true); 
+    assert_eq!(zf[2],false);
+}

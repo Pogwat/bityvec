@@ -1,45 +1,54 @@
-use std::mem::transmute;
 use std::marker::PhantomData;
-use bit_operations::BitOps;
 use crate::UInts;
+use crate::iter::*;
 
-pub struct Mutable;
+pub struct BitSlice<'a,Mutability:MPtr<ElementType>, ElementType> {
+        pub start_ptr: Mutability::PointerType,
+        pub start_bit: usize, 
+        pub end_bit: usize, 
+        pub relative_end_element: usize, 
+        pub _element_type: PhantomData<&'a ElementType>,
+}
+
+pub trait MPtr<ElementType> {type PointerType;}
 pub struct Immutable;
-/* START, START BIT, END, END_BIT */
-pub struct BitSlice<Mutability> {
-    end_bit:usize, //64bits
-    start_bit:usize, //64bits
-    _mutability: PhantomData<Mutability>, // 0 bits
+pub struct Mutable;
+impl <ElementType> MPtr<ElementType> for Mutable {type PointerType = *mut ElementType;}
+impl <ElementType> MPtr<ElementType> for Immutable {type PointerType = *const ElementType;}
+
+impl <'a,ElementType:UInts> BitSlice<'a,Mutable, ElementType> {
+    pub fn iter_mut(&mut self) -> BiterMut<'_,ElementType> { 
+        BiterMut {
+            end_ptr: unsafe { self.start_ptr.add(self.relative_end_element) }, 
+            end_bit: self.end_bit,
+            ptr: self.start_ptr,
+            bit_position: self.start_bit,
+            _marker: PhantomData
+        }
+    }
 }
-
-impl <Mutability> BitSlice<Mutability> {
-    pub fn to_pointer<'a, ElementType: UInts>(&self) -> &'a [ElementType] {unsafe { core::mem::transmute((self.start_bit,self.end_bit)) }}
-    pub fn to_mut_pointer<'a, ElementType: UInts>(&mut self) -> &'a mut [ElementType] {unsafe { std::mem::transmute((self.start_bit,self.end_bit)) }}
-}
-
- pub trait MutabilityFlag {type MutFlag;}
-
-pub trait BitSliceOps<Mutability>: MutabilityFlag {
-    fn to_bitslice(&self) -> BitSlice<Mutability>;
-}
-
-macro_rules! slice_mutability {
-    (($($generics:tt)*), $target_type:ty, $mutability:ty) => {
-        impl<$($generics)*> MutabilityFlag for $target_type {type MutFlag = $mutability;}
-
-        impl<$($generics)*> BitSliceOps<$mutability> for $target_type {
-            fn to_bitslice(&self) -> BitSlice<$mutability> {
-                let (start, end): (usize, usize) = unsafe {  *(self as *const Self as *const (usize, usize)) }; //Pointer to (self as 2 usize pointers) then deref
-                BitSlice {
-                    start_bit: start,
-                    end_bit: end,
-                    _mutability: PhantomData, 
+use std::ops::Index;
+macro_rules! bit_slices { //Shared Methods 
+    ($($mutability:ty),*) => {
+        $(
+            impl <'a,ElementType:UInts> BitSlice<'a,$mutability,ElementType> { 
+                pub fn iter(&self) -> Biter<ElementType> {
+                    Biter {
+                        end_ptr: unsafe { self.start_ptr.add(self.relative_end_element) }, 
+                        end_bit: self.end_bit,
+                        ptr: self.start_ptr,
+                        bit_position: self.start_bit
+                    }
                 }
             }
-        }
-    };
-}
 
-slice_mutability!((ElementType: UInts), [ElementType], Immutable);
-slice_mutability!((ElementType: UInts), &mut [ElementType], Mutable);
-slice_mutability!((ElementType: UInts), & [ElementType], Immutable);
+            impl <'a, ElementType:UInts> Index<usize> for BitSlice<'a,$mutability,ElementType> {
+                type Output = bool;
+                fn index(&self, index: usize) -> &Self::Output { //MUST RETURN REF TO SELF
+                    unsafe { if (*self.start_ptr.add(index/ElementType::ELEMENT_BITS)).get_bit(index%ElementType::ELEMENT_BITS) {&true} else {&false} }
+                }
+            }
+        )*
+    }
+}
+bit_slices!(Immutable, Mutable);

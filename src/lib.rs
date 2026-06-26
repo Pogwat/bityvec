@@ -11,7 +11,7 @@ iter(mut) \,
 use bit_operations::BitOps;
 use bit_operations::MutBitProxy;
 use bit_operations::NumRangeExtract;
-mod slicing;
+pub mod slicing;
 use slicing::*;
 mod iter;
 use iter::*;
@@ -40,8 +40,6 @@ pub struct Bitys<ElementType: UInts> {
 }
 
 impl<ElementType: UInts> Bitys<ElementType> {
-    const TRUE:bool = true; //Index trait must return refrence to self
-    const FALSE:bool = false; //Index trait must return refrence to self
     pub fn new() -> Self{ Self{bytes:Vec::new(), len:0}  }
     pub fn bit_idx(bitdex:usize) -> usize {bitdex%ElementType::ELEMENT_BITS}
     pub fn type_idx(bitdex:usize) -> usize {bitdex/ElementType::ELEMENT_BITS}
@@ -83,13 +81,28 @@ impl<ElementType: UInts> Bitys<ElementType> {
 
     pub fn iter_mut(&mut self) -> BiterMut<'_,ElementType> {
         BiterMut {
-            ptr: &mut self.bytes[0] as *mut ElementType,
-            bit_position:0,
             end_ptr: &self.bytes[self.bytes.len()-1] as *const ElementType,
             end_bit:Self::bit_idx(self.len)-1,
+            ptr: &mut self.bytes[0] as *mut ElementType,
+            bit_position:0,
             _marker: PhantomData
         }
     }
+
+    pub fn slice<R:NumRangeExtract<usize>>(&self, range:&R) -> BitSlice<'_,Immutable, ElementType> {
+        let start = range.start().unwrap_or(0).max(0);
+        let end = range.end().unwrap_or(self.len-1).min(self.len-1);
+        BitSlice {
+            start_ptr: &self.bytes[Self::type_idx(start)] as *const ElementType,
+            start_bit: Self::bit_idx(start), 
+            end_bit: Self::bit_idx(end), 
+            relative_end_element: Self::type_idx(end-start), 
+            _element_type: PhantomData
+        }
+    }
+
+    //pub fn slice_mut(&mut self) -> BitSlice<'a,Mutable, ElementType>;
+
 
 
 } //Excluding genercis I have a full working bitvec in lines:25-39 just 14 lines of code!
@@ -98,7 +111,7 @@ use std::ops::Index;
 impl <'a, ElementType:UInts> Index<usize> for Bitys<ElementType> {
     type Output = bool;
     fn index(&self, index: usize) -> &Self::Output { //MUST RETURN REF TO SELF
-        if self.get(index) {&Self::TRUE} else {&Self::FALSE}
+        if self.get(index) {&true} else {&false}
     }
 }
 
